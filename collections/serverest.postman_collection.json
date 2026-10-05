@@ -1,0 +1,540 @@
+{
+  "info": {
+    "name": "ServeRest - Testes de API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Testes automatizados da API ServeRest (https://serverest.dev). Cenários positivos e negativos de Usuários, Login e Produtos. Autora: Ester Silva de Souza."
+  },
+  "item": [
+    {
+      "name": "01 - Usuários",
+      "item": [
+        {
+          "name": "CT01 - Cadastrar usuário administrador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"{{nome}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{senha}}\",\n  \"administrador\": \"true\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Gera dados únicos a cada execução",
+                  "const id = Date.now();",
+                  "pm.collectionVariables.set('nome', `QA Ester ${id}`);",
+                  "pm.collectionVariables.set('email', `qa.ester.${id}@teste.com`);",
+                  "pm.collectionVariables.set('senha', 'Senha@123');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 - Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('Mensagem de sucesso', () => pm.expect(body.message).to.eql('Cadastro realizado com sucesso'));",
+                  "pm.test('Retorna o _id do usuário', () => pm.expect(body._id).to.be.a('string').and.not.empty);",
+                  "pm.test('Tempo de resposta abaixo de 2s', () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+                  "pm.collectionVariables.set('usuarioId', body._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CT02 - Não cadastrar usuário com e-mail repetido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"{{nome}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{senha}}\",\n  \"administrador\": \"true\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400 - Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Mensagem de e-mail em uso', () => pm.expect(pm.response.json().message).to.eql('Este email já está sendo usado'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CT03 - Buscar usuário por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 - OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Retorna o usuário correto', () => {",
+                  "  pm.expect(body._id).to.eql(pm.collectionVariables.get('usuarioId'));",
+                  "  pm.expect(body.email).to.eql(pm.collectionVariables.get('email'));",
+                  "});",
+                  "pm.test('Contrato: campos obrigatórios', () => pm.expect(body).to.have.all.keys('nome','email','password','administrador','_id'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CT04 - Listar usuários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 - OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Quantidade bate com a lista', () => pm.expect(body.quantidade).to.eql(body.usuarios.length));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CT05 - Buscar usuário inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/abcdefghij123456",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "abcdefghij123456"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400 - Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Mensagem de usuário não encontrado', () => pm.expect(pm.response.json().message).to.eql('Usuário não encontrado'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Login",
+      "item": [
+        {
+          "name": "CT06 - Login com sucesso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{senha}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 - OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Mensagem de sucesso', () => pm.expect(body.message).to.eql('Login realizado com sucesso'));",
+                  "pm.test('Retorna token Bearer', () => pm.expect(body.authorization).to.match(/^Bearer /));",
+                  "pm.collectionVariables.set('token', body.authorization);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CT07 - Login com senha inválida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"senhaErrada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401 - Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Mensagem de credenciais inválidas', () => pm.expect(pm.response.json().message).to.eql('Email e/ou senha inválidos'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Produtos",
+      "item": [
+        {
+          "name": "CT08 - Cadastrar produto com token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/produtos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "produtos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"{{produtoNome}}\",\n  \"preco\": 150,\n  \"descricao\": \"Produto criado pelos testes automatizados\",\n  \"quantidade\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('produtoNome', `Produto QA ${Date.now()}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 - Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('Mensagem de sucesso', () => pm.expect(body.message).to.eql('Cadastro realizado com sucesso'));",
+                  "pm.collectionVariables.set('produtoId', body._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CT09 - Não cadastrar produto sem token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/produtos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "produtos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Produto sem token\",\n  \"preco\": 10,\n  \"descricao\": \"Teste negativo\",\n  \"quantidade\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401 - Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Mensagem de token ausente', () => pm.expect(pm.response.json().message).to.include('Token de acesso ausente'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CT10 - Buscar produto por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/produtos/{{produtoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "produtos",
+                "{{produtoId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 - OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Dados do produto corretos', () => {",
+                  "  pm.expect(body.nome).to.eql(pm.collectionVariables.get('produtoNome'));",
+                  "  pm.expect(body.preco).to.eql(150);",
+                  "  pm.expect(body.quantidade).to.eql(10);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CT11 - Excluir produto",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/produtos/{{produtoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "produtos",
+                "{{produtoId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 - OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Mensagem de exclusão', () => pm.expect(pm.response.json().message).to.eql('Registro excluído com sucesso'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Limpeza",
+      "description": "Remove os dados criados pelos testes.",
+      "item": [
+        {
+          "name": "CT12 - Excluir usuário",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 - OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Mensagem de exclusão', () => pm.expect(pm.response.json().message).to.eql('Registro excluído com sucesso'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://serverest.dev"
+    },
+    {
+      "key": "nome",
+      "value": ""
+    },
+    {
+      "key": "email",
+      "value": ""
+    },
+    {
+      "key": "senha",
+      "value": ""
+    },
+    {
+      "key": "usuarioId",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "produtoNome",
+      "value": ""
+    },
+    {
+      "key": "produtoId",
+      "value": ""
+    }
+  ]
+}
